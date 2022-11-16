@@ -1,0 +1,44 @@
+name: 'Apply'
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+
+jobs:
+  terraform:
+    name: 'apply'
+    env:
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_TF }}
+    runs-on: ubuntu-latest
+    environment: apply
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: "./terraform"
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      
+    - name: Setup Terragrunt
+      uses: autero1/action-terragrunt@v1.1.0
+      with:
+        terragrunt_version: 0.36.0
+
+    - name: Terragrunt Init
+      run: terragrunt run-all init
+
+    - name: Terragrunt Validate
+      run: terragrunt run-all validate
+
+    - name: Terragrunt Apply
+      run: terragrunt run-all apply --terragrunt-non-interactive
+
+      env:
+        TF_VAR_mssql_user_name_root:          ${{ secrets.TF_VAR_administrator_login_db }}
+        TF_VAR_mssql_user_password_root:      ${{ secrets.TF_VAR_administrator_password_db }}
+        TF_VAR_postgresql_user_password_root: ${{ secrets.TF_VAR_administrator_password_db }}
+        TF_VAR_mysql_user_password_root:      ${{ secrets.TF_VAR_administrator_password_db }}
